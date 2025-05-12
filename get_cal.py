@@ -2,6 +2,7 @@ import os.path
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from rapidfuzz import process, fuzz
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -17,18 +18,39 @@ SAMPLE_SPREADSHEET_ID = "1BeUc1WCAZxllLYw1tOiFwrVKY8o3JWNbd7kyLt9SdUQ"
 SAMPLE_RANGE_NAME = "food journal!C:D"
 
 
-def create_word_cloud(data):
-    """Creates a word cloud from food and calorie data and saves it as an png."""
-    # Convert the data into a dictionary with food as keys and calories as values
+def group_similar_foods(data):
+    """Groups similar food entries and sums their calories."""
     word_freq = defaultdict(int)
     for row in data:
         if len(row) == 2 and row[1].isdigit():
-            word_freq[row[0]] += int(row[1])
+            food = row[0]
+            calories = int(row[1])
+
+            # Find the closest match in the existing keys
+            if word_freq:  # Only attempt matching if word_freq is not empty
+                match_result = process.extractOne(food, word_freq.keys(), scorer=fuzz.ratio)
+                if match_result:
+                    match, score, _ = match_result
+                    # If similarity is above a threshold (e.g., 80%), group them
+                    if score > 80:
+                        word_freq[match] += calories
+                        continue
+
+            # If no match or below threshold, add as a new entry
+            word_freq[food] += calories
+
+    return word_freq
+
+
+def create_word_cloud(data):
+    """Creates a word cloud from food and calorie data and saves it as an SVG."""
+    # Group similar food entries
+    word_freq = group_similar_foods(data)
 
     # Generate the word cloud
     wordcloud = WordCloud(width=800, height=400, background_color="white").generate_from_frequencies(word_freq)
 
-    # Save the word cloud as an png file
+    # Save the word cloud as an SVG file
     wordcloud.to_file("data/food_wordcloud.png")
     print("Word cloud saved as food_wordcloud.svg")
 
@@ -53,7 +75,7 @@ def main():
             )
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open("creds/creds/token.json", "w") as token:
+        with open("creds/token.json", "w") as token:
             token.write(creds.to_json())
 
     try:
