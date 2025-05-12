@@ -1,4 +1,9 @@
 # Aliesscalories
+This is a python project to run numbers on my food journal stored in a google sheet.
+so far it can read the sheet and create a wordcloud based on total calories per food joining similar food names together
+
+# based on 
+https://developers.google.com/workspace/sheets/api/quickstart/python
 
 ## Setup Instructions
 
@@ -6,7 +11,7 @@
 To activate the virtual environment, run the following command:
 
 ```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Bypass
 & c:/Users/axl/git/aliesscalories/.venv/Scripts/Activate.ps1
 ```
 
